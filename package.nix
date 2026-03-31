@@ -26,11 +26,18 @@ pkgs.buildNpmPackage {
     inherit srcFinal;
     hash = npmDepsHash;
   };
-  dontBuild = true;
+
+  # Build TypeScript
+  buildPhase = ''
+    runHook preBuild
+    npm run build
+    runHook postBuild
+  '';
+
   installPhase = ''
     runHook preInstall
-    mkdir -p $out/lib/node_modules
-    cp -r . $out/lib/node_modules/pi-worktree
+    mkdir -p $out/lib/node_modules/pi-worktree
+    cp -r dist README.md LICENSE package.json $out/lib/node_modules/pi-worktree/
     runHook postInstall
   '';
 }
