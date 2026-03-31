@@ -764,6 +764,7 @@ export default function (pi: ExtensionAPI) {
           return {
             content: [{ type: "text", text: "❌ Not a git repository. Worktrees require a git repo." }],
             isError: true,
+            details: {},
           };
         }
 
@@ -782,6 +783,7 @@ export default function (pi: ExtensionAPI) {
                     `Use \`cd ${existing.directory}\` to enter it.`,
                 },
               ],
+              details: existing,
             };
           }
         }
@@ -838,15 +840,16 @@ export default function (pi: ExtensionAPI) {
         };
       }
 
+      const primaryDir = await getPrimaryDirectory();
       const lines = worktrees.map((wt) => {
         const gitEntry = gitWorktrees.find(
           (g) => path.normalize(g.path) === path.normalize(wt.directory)
         );
         const isCurrent = path.normalize(wt.directory) === path.normalize(currentDir);
-        const hasChanges = gitEntry && !gitEntry.isMain && gitEntry.branch !== undefined;
+        const isMain = path.normalize(wt.directory) === path.normalize(primaryDir);
 
         let icon = "🌿";
-        if (wt.directory === (await getPrimaryDirectory())) icon = "🏠";
+        if (isMain) icon = "🏠";
         else if (isCurrent) icon = "📍";
 
         let status = "";
@@ -890,6 +893,7 @@ export default function (pi: ExtensionAPI) {
           return {
             content: [{ type: "text", text: `❌ Worktree "${params.name}" not found` }],
             isError: true,
+            details: {},
           };
         }
 
@@ -970,6 +974,7 @@ export default function (pi: ExtensionAPI) {
           return {
             content: [{ type: "text", text: `Worktree "${params.name}" not found` }],
             isError: true,
+            details: {},
           };
         }
         targetDir = info.directory;
@@ -1037,6 +1042,7 @@ export default function (pi: ExtensionAPI) {
         return {
           content: [{ type: "text", text: `Worktree not found: ${params.name}` }],
           isError: true,
+          details: {},
         };
       }
 
@@ -1193,11 +1199,12 @@ export default function (pi: ExtensionAPI) {
   // Event Handlers
   // ============================================================================
 
-  // Clean up stale locks on session end
-  pi.on("session_end", async (_event, _ctx) => {
-    const { cleaned } = await cleanupStaleLocks();
-    if (cleaned > 0) {
-      console.log(`[worktree] Cleaned ${cleaned} stale locks`);
-    }
-  });
+  // Note: "session_end" event may not be available in all pi versions
+  // Uncomment when the event type is supported:
+  // pi.on("session_end", async (_event: any, _ctx: any) => {
+  //   const { cleaned } = await cleanupStaleLocks();
+  //   if (cleaned > 0) {
+  //     console.log(`[worktree] Cleaned ${cleaned} stale locks`);
+  //   }
+  // });
 }

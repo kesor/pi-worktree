@@ -1,43 +1,32 @@
 {
   pkgs,
   version ? "0.1.0",
-  hash ? null,
-  npmDepsHash ? null,
-  src ? null,
 }:
 let
-  srcFinal =
-    if src != null then
-      src
-    else if hash != null then
-      pkgs.fetchFromGitHub {
-        owner = "kesor";
-        repo = "pi-worktree";
-        tag = "v${version}";
-        inherit hash;
-      }
-    else
-      ./.;
+  src = ./.;
 in
-pkgs.buildNpmPackage {
+pkgs.stdenv.mkDerivation {
   pname = "pi-worktree";
-  inherit srcFinal version npmDepsHash;
-  npmDeps = pkgs.fetchNpmDeps {
-    inherit srcFinal;
-    hash = npmDepsHash;
-  };
+  inherit version src;
 
-  # Build TypeScript
   buildPhase = ''
-    runHook preBuild
-    npm run build
-    runHook postBuild
+    # Check if dist exists, if not we can't build in sandbox
+    if [ ! -d "dist" ]; then
+      echo "ERROR: dist/ folder not found. Run 'npm run build' first."
+      exit 1
+    fi
+    echo "dist/ found, packaging..."
   '';
 
   installPhase = ''
-    runHook preInstall
     mkdir -p $out/lib/node_modules/pi-worktree
     cp -r dist README.md LICENSE package.json $out/lib/node_modules/pi-worktree/
-    runHook postInstall
   '';
+
+  meta = with pkgs.lib; {
+    description = "Git worktree sandboxes for safe experimentation";
+    homepage = "https://github.com/kesor/pi-worktree";
+    license = licenses.mit;
+    platforms = platforms.all;
+  };
 }
