@@ -1,0 +1,9 @@
+{
+  "packages": {
+    ".": {
+      "package-name": "pi-worktree",
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json"
+    }
+  }
+}
